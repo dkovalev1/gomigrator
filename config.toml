@@ -1,0 +1,2 @@
+# Are comments allowed?
+DSN="postgres://pgx_md5:secret@localhost:5432/pgx_test?sslmode=disable"
