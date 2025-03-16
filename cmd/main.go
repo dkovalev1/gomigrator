@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/dkovalev1/gomigrator"
 	"github.com/dkovalev1/gomigrator/config"
-	"github.com/dkovalev1/gomigrator/pkg"
 )
 
 func init() {
@@ -15,17 +15,17 @@ func init() {
 
 type commandDefinition struct {
 	name string
-	fn   func(config config.Config) error
+	fn   func(config config.Config, args []string) error
 	help string
 }
 
 var commands = []commandDefinition{
-	{"create", pkg.DoCreate, ""},
-	{"up", pkg.DoUp, ""},
-	{"down", pkg.DoDown, ""},
-	{"redo", pkg.DoRedo, ""},
-	{"status", pkg.DoStatus, ""},
-	{"dbversion", pkg.DoDbversion, ""},
+	{"create", gomigrator.DoCreate, "create a migration"},
+	{"up", gomigrator.DoUp, "apply all migrations"},
+	{"down", gomigrator.DoDown, "revert migrations"},
+	{"redo", gomigrator.DoRedo, "redo latest migration (undo + redo)"},
+	{"status", gomigrator.DoStatus, "show migration status"},
+	{"dbversion", gomigrator.DoDbversion, "show latest migration"},
 }
 
 var errCommandNotFound = errors.New("command not found")
@@ -39,14 +39,14 @@ func usage(err error) {
 	flag.Usage()
 }
 
-func runCommand(command string, config config.Config) error {
+func runCommand(command string, config config.Config, args []string) error {
 
 	fmt.Printf("Performing migration command %s, DSN=%s, migrationPath=%s, migrationType=%s\n",
 		command, config.DSN, config.MigrationPath, config.MigrationType.String())
 
 	for _, cmd := range commands {
 		if cmd.name == command {
-			return cmd.fn(config)
+			return cmd.fn(config, args)
 		}
 	}
 	err := fmt.Errorf("%v %s", errCommandNotFound, command)
@@ -82,5 +82,8 @@ func main() {
 
 	command := flag.Arg(0)
 
-	runCommand(command, config)
+	err := runCommand(command, config, flag.Args()[1:])
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
 }

@@ -1,14 +1,13 @@
-package pkg
+package gomigrator
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/dkovalev1/gomigrator/config"
-	"github.com/dkovalev1/gomigrator/internal"
+	internal "github.com/dkovalev1/gomigrator/internal"
 )
 
-func DoDbversion(config config.Config) error {
+func DoDbversion(config config.Config, args []string) error {
 	fmt.Printf("dbversion, dsn=%s, migrationPath=%s, migrationType=%s\n", config.DSN, config.MigrationPath, config.MigrationType.String())
 
 	db := internal.NewDatabase(config.DSN)
@@ -18,5 +17,5 @@ func DoDbversion(config config.Config) error {
 		panic(err)
 	}
 	fmt.Println(version)
-	return errors.ErrUnsupported
+	return nil
 }

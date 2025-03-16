@@ -46,15 +46,18 @@ type Config struct {
 	MigrationType MigrationType
 }
 
+var DefaultConfig = Config{
+	DSN:           "host=localhost user=test password=test dbname=migratordb sslmode=disable",
+	MigrationPath: "migrations",
+	MigrationType: MigrationSQL,
+}
+
 func NewConfig(configFile string) Config {
-	config := Config{
-		DSN:           "",
-		MigrationPath: "migrations",
-		MigrationType: MigrationSQL,
-	}
+
+	config := DefaultConfig
 
 	if _, err := toml.DecodeFile(configFile, &config); err != nil {
-		log.Fatal(err)
+		log.Printf("%v. Using default values", err)
 	}
 
 	return config
