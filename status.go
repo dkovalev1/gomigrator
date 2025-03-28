@@ -16,8 +16,19 @@ func DoStatus(config config.Config, args []string) error {
 		return err
 	}
 
-	for _, m := range *migrations {
-		fmt.Printf("%s\n", m.Name)
+	fmt.Printf("%6s|%10s|%6s|%10s|%15s\n", "id", "name", "type", "status", "last run")
+	for range 51 {
+		fmt.Print("-")
+	}
+	fmt.Println("")
+	for _, m := range migrations {
+		var applied string
+		if m.Applied {
+			applied = m.LastRun.String()
+		} else {
+			applied = "NEVER"
+		}
+		fmt.Printf("%6d|%10s|%6s|%10s|%15s\n", m.Id, m.Name, m.Type.String(), m.Status.String(), applied)
 	}
 	return nil
 }

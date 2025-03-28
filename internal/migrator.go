@@ -57,13 +57,13 @@ func (m *Migrator) Migrate() error {
 			tx.Rollback()
 		}
 	}()
-	migrations, err := m.Database.GetMigrations()
+	migrations, err := m.Database.GetMigrations(MigrationNew)
 	if err != nil {
 		return err
 	}
 
-	for _, mg := range *migrations {
-		err = m.ApplyMigration(tx, mg)
+	for _, mg := range migrations {
+		err = m.ApplyMigration(tx, &mg)
 
 		if err != nil {
 			return err
@@ -127,12 +127,14 @@ func (m *Migrator) ApplyMigration(tx *sql.Tx, mg *MigrationRec) error {
 	migration := Registry.Get(mg.Name)
 
 	var err error
-	switch mg.MigrationType {
+	switch mg.Type {
 	case config.MigrationSQL:
-		m.applySqlMigration(tx, mg)
+		err = m.applySqlMigration(tx, mg)
 	case config.MigrationGo:
 		err = m.applyGoMigration(tx, migration)
 	}
+
+	status := MigrationError
 
 	if err != nil {
 		log.Printf("Error in %s for migration %s: %v", m.Direction.String(), mg.Name, err)
@@ -142,18 +144,17 @@ func (m *Migrator) ApplyMigration(tx *sql.Tx, mg *MigrationRec) error {
 			log.Printf("Error in COMMIT for %s migration %s: %v", m.Direction.String(), mg.Name, err)
 		} else {
 			log.Printf("migration %s applied", mg.Name)
+
+			if m.Direction == MigrationDown {
+				status = MigrationNew
+			} else {
+				status = MigrationApplied
+			}
 		}
 	}
-	status := MigrationApplied
-	if m.Direction == MigrationDown {
-		status = MigrationNew
-	}
-	if err != nil {
-		status = MigrationError
-	}
 
-	err = m.Database.SetMigrationStatus(mg.Name, status)
-	if err != nil {
+	status_err := m.Database.SetMigrationStatus(mg.Id, status)
+	if status_err != nil {
 		panic(fmt.Sprintf("Migration %s applied, but I can not update status: %v", mg.Name, err))
 	}
 	return err
@@ -176,7 +177,7 @@ func (m *Migrator) applyGoMigration(tx *sql.Tx, migration *Migration) error {
 
 func (m *Migrator) applySqlMigration(tx *sql.Tx, mg *MigrationRec) error {
 
-	checkPath := path.Join(m.Config.MigrationPath, mg.Name)
+	checkPath := path.Join(m.Config.MigrationPath, mg.Name+".sql")
 
 	_, err := os.Stat(checkPath)
 	if err != nil {

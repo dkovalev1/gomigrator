@@ -3,7 +3,6 @@ package gomigrator
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 
@@ -38,10 +37,5 @@ func DoCreate(configuration config.Config, args []string) error {
 
 	err := db.CreateMigration(migrationName, mType)
 
-	if err != nil {
-		log.Panicf("Error creationg migration %s: %v", migrationName, err)
-	} else {
-		log.Printf("Migration %s created", migrationName)
-	}
 	return err
 }

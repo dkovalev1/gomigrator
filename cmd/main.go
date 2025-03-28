@@ -85,5 +85,8 @@ func main() {
 	err := runCommand(command, config, flag.Args()[1:])
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
 	}
+	fmt.Println("Ok.")
+	os.Exit(0)
 }

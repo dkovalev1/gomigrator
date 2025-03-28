@@ -1,15 +1,15 @@
---gomigrator
+--gomigrator up
 CREATE SCHEMA IF NOT EXISTS gomigrator;
 
---gomigrator
+--gomigrator up
 CREATE TYPE migration_status AS ENUM ('new', 'inprogress', 'error', 'applied');
 CREATE TYPE migration_type AS ENUM ('go', 'sql');
 
---gomigrator
+--gomigrator up
 CREATE TABLE gomigrator.migrations (
-    id SERIAL,
-    name text primary key,
-    type migration_type,
-    status migration_status DEFAULT 'created',
-    last_run timestamp
+    mid SERIAL,
+    mname text primary key,
+    mtype migration_type,
+    mstatus migration_status DEFAULT 'new',
+    mlastrun timestamp
 );
