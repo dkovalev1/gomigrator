@@ -2,10 +2,11 @@ package gomigrator
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
-	"github.com/dkovalev1/gomigrator/config"
-	internal "github.com/dkovalev1/gomigrator/internal"
+	"github.com/dkovalev1/gomigrator/config"            //nolint
+	internal "github.com/dkovalev1/gomigrator/internal" //nolint
 )
 
 type VersionInfo struct {
@@ -26,11 +27,13 @@ func DBVersion(config config.Config) (version VersionInfo, err error) {
 	return
 }
 
-func DoDbversion(config config.Config, args ...string) error {
-	fmt.Printf("dbversion, dsn=%s, migrationPath=%s, migrationType=%s\n", config.DSN, config.MigrationPath, config.MigrationType.String())
+func DoDbversion(config config.Config, _ ...string) error {
+	fmt.Printf(
+		"dbversion, dsn=%s, migrationPath=%s, migrationType=%s\n",
+		config.DSN, config.MigrationPath, config.MigrationType.String())
 
 	version, err := DBVersion(config)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		panic(err)
 	}
 	if err == nil {

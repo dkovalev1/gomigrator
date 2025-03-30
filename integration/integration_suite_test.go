@@ -6,11 +6,11 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/dkovalev1/gomigrator/config"
-	gomigrator "github.com/dkovalev1/gomigrator/pkg"
-	"github.com/jmoiron/sqlx"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/dkovalev1/gomigrator/config"         //nolint
+	gomigrator "github.com/dkovalev1/gomigrator/pkg" //nolint
+	"github.com/jmoiron/sqlx"                        //nolint
+	. "github.com/onsi/ginkgo/v2"                    //nolint
+	. "github.com/onsi/gomega"                       //nolint
 )
 
 const (
@@ -19,6 +19,12 @@ const (
 	one      int64 = 1
 	two      int64 = 2
 )
+
+var testConfig = config.Config{
+	DSN:           "host=localhost user=test password=test dbname=migratordb sslmode=disable",
+	MigrationType: config.MigrationGo,
+	MigrationPath: "migrations",
+}
 
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -61,13 +67,43 @@ func cleanupDatabase() {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-// records from the database for test purposes
+// records from the database for test purposes.
 type MigrationRec struct {
 	Mid      int
 	Mname    string
 	Mtype    string
 	Mstatus  string
 	Mlastrun sql.NullTime
+}
+
+func setUpMigrations() {
+	err := gomigrator.DoCreate(testConfig, "api1")
+	Expect(err).NotTo(HaveOccurred())
+
+	err = gomigrator.DoCreate(testConfig, "api2")
+	Expect(err).NotTo(HaveOccurred())
+
+	err = gomigrator.DoCreate(testConfig, "mig1")
+	Expect(err).NotTo(HaveOccurred())
+
+	err = gomigrator.DoUp(testConfig)
+	Expect(err).NotTo(HaveOccurred())
+
+	tables := getTables()
+	Expect(tables).To(ContainElement("apitest1"))
+	Expect(tables).To(ContainElement("apitest2"))
+	Expect(tables).To(ContainElement("test1"))
+}
+
+func checkMigrationsStatus(status string) {
+	hasMigrations := getMigrationRecords()
+	Expect(len(hasMigrations)).Should(Equal(3))
+	Expect(hasMigrations[0].Mname).Should(Equal("api1"))
+	Expect(hasMigrations[0].Mstatus).Should(Equal(status))
+	Expect(hasMigrations[1].Mname).Should(Equal("api2"))
+	Expect(hasMigrations[1].Mstatus).Should(Equal(status))
+	Expect(hasMigrations[2].Mname).Should(Equal("mig1"))
+	Expect(hasMigrations[2].Mstatus).Should(Equal(status))
 }
 
 func getMigrationRecords() []MigrationRec {
@@ -131,7 +167,6 @@ func checkOutput(args ...string) string {
 }
 
 var _ = Describe("Integration tests for utility", func() {
-
 	BeforeEach(func() {
 		cleanupDatabase()
 	})
@@ -141,7 +176,6 @@ var _ = Describe("Integration tests for utility", func() {
 	})
 
 	It("creates migration", func() {
-
 		checkOutput("create", "mig1")
 
 		// Check that mig1 is in migrator table
@@ -202,7 +236,6 @@ var _ = Describe("Integration tests for utility", func() {
 
 		value2 := selectValue("test2", "key")
 		Expect(value2).Should(Equal("one"))
-
 	})
 
 	It("reverts migrations - down", func() {
@@ -257,7 +290,7 @@ var _ = Describe("Integration tests for utility", func() {
 	})
 })
 
-func api1_up(tx *sql.Tx) error {
+func api1Up(tx *sql.Tx) error {
 	_, err := tx.Exec("CREATE TABLE apitest1(i INT PRIMARY KEY, j INT)")
 	if err == nil {
 		_, err = tx.Exec("INSERT INTO apitest1(i) VALUES(2)")
@@ -265,12 +298,12 @@ func api1_up(tx *sql.Tx) error {
 	return err
 }
 
-func api1_down(tx *sql.Tx) error {
+func api1Down(tx *sql.Tx) error {
 	_, err := tx.Exec("DROP TABLE IF EXISTS apitest1")
 	return err
 }
 
-func api2_up(tx *sql.Tx) error {
+func api2Up(tx *sql.Tx) error {
 	_, err := tx.Exec("CREATE TABLE apitest2(\"key\" VARCHAR PRIMARY KEY, j INT)")
 	if err == nil {
 		_, err = tx.Exec("INSERT INTO apitest2(\"key\", j) VALUES('two', 1)")
@@ -278,22 +311,16 @@ func api2_up(tx *sql.Tx) error {
 	return err
 }
 
-func api2_down(tx *sql.Tx) error {
+func api2Down(tx *sql.Tx) error {
 	_, err := tx.Exec("DROP TABLE IF EXISTS apitest2")
 	return err
 }
 
 var _ = Describe("Integration API tests", func() {
-	test_config := config.Config{
-		DSN:           "host=localhost user=test password=test dbname=migratordb sslmode=disable",
-		MigrationType: config.MigrationGo,
-		MigrationPath: "migrations",
-	}
-
-	err := gomigrator.Register("api1", api1_up, api1_down)
+	err := gomigrator.Register("api1", api1Up, api1Down)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = gomigrator.Register("api2", api2_up, api2_down)
+	err = gomigrator.Register("api2", api2Up, api2Down)
 	Expect(err).NotTo(HaveOccurred())
 
 	BeforeEach(func() {
@@ -305,14 +332,14 @@ var _ = Describe("Integration API tests", func() {
 	})
 
 	It("create migration", func() {
-		err := gomigrator.DoCreate(test_config, "api1")
+		err := gomigrator.DoCreate(testConfig, "api1")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = gomigrator.DoCreate(test_config, "api2")
+		err = gomigrator.DoCreate(testConfig, "api2")
 		Expect(err).NotTo(HaveOccurred())
 
 		// Check SQL migration
-		err = gomigrator.DoCreate(test_config, "mig1")
+		err = gomigrator.DoCreate(testConfig, "mig1")
 		Expect(err).NotTo(HaveOccurred())
 
 		hasMigrations := getMigrationRecords()
@@ -330,22 +357,22 @@ var _ = Describe("Integration API tests", func() {
 
 	It("status", func() {
 		// set up
-		err := gomigrator.DoCreate(test_config, "api1")
+		err := gomigrator.DoCreate(testConfig, "api1")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = gomigrator.DoCreate(test_config, "api2")
+		err = gomigrator.DoCreate(testConfig, "api2")
 		Expect(err).NotTo(HaveOccurred())
 
 		// Check SQL migration
-		err = gomigrator.DoCreate(test_config, "mig1")
+		err = gomigrator.DoCreate(testConfig, "mig1")
 		Expect(err).NotTo(HaveOccurred())
 
 		hasMigrations := getMigrationRecords()
 		Expect(len(hasMigrations)).Should(Equal(3))
 
 		// run test
-
-		migrations, err := gomigrator.Status(test_config)
+		migrations, err := gomigrator.Status(testConfig)
+		Expect(err).NotTo(HaveOccurred())
 		Expect(len(migrations)).Should(Equal(3))
 
 		Expect(migrations[0].Name).Should(Equal("api1"))
@@ -365,26 +392,26 @@ var _ = Describe("Integration API tests", func() {
 	})
 
 	It("dbversion", func() {
-		err := gomigrator.DoCreate(test_config, "api1")
+		err := gomigrator.DoCreate(testConfig, "api1")
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = gomigrator.DBVersion(test_config)
+		_, err = gomigrator.DBVersion(testConfig)
 		Expect(err).To(HaveOccurred())
 		Expect(err).To(Equal(sql.ErrNoRows))
 
-		err = gomigrator.DoUp(test_config)
+		err = gomigrator.DoUp(testConfig)
 		Expect(err).NotTo(HaveOccurred())
 
-		version, err := gomigrator.DBVersion(test_config)
+		version, err := gomigrator.DBVersion(testConfig)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(version.Version).Should(Equal(1))
 		Expect(version.MigrationName).Should(Equal("api1"))
 	})
 	It("up", func() {
-		err := gomigrator.DoCreate(test_config, "api1")
+		err := gomigrator.DoCreate(testConfig, "api1")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = gomigrator.DoUp(test_config)
+		err = gomigrator.DoUp(testConfig)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Check that mig1 is in migrator table and status is applied
@@ -395,33 +422,23 @@ var _ = Describe("Integration API tests", func() {
 
 		value := selectValue("apitest1", "i")
 		Expect(value).Should(Equal(two))
-
 	})
 
 	It("up2", func() {
-		err := gomigrator.DoCreate(test_config, "api1")
+		err := gomigrator.DoCreate(testConfig, "api1")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = gomigrator.DoCreate(test_config, "api2")
+		err = gomigrator.DoCreate(testConfig, "api2")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = gomigrator.DoCreate(test_config, "mig1")
+		err = gomigrator.DoCreate(testConfig, "mig1")
 		Expect(err).NotTo(HaveOccurred())
 
-		err = gomigrator.DoUp(test_config)
+		err = gomigrator.DoUp(testConfig)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Check that mig1 is in migrator table and status is applied
-		hasMigrations := getMigrationRecords()
-		Expect(len(hasMigrations)).Should(Equal(3))
-		Expect(hasMigrations[0].Mname).Should(Equal("api1"))
-		Expect(hasMigrations[0].Mstatus).Should(Equal("applied"))
-
-		Expect(hasMigrations[1].Mname).Should(Equal("api2"))
-		Expect(hasMigrations[1].Mstatus).Should(Equal("applied"))
-
-		Expect(hasMigrations[2].Mname).Should(Equal("mig1"))
-		Expect(hasMigrations[2].Mstatus).Should(Equal("applied"))
+		checkMigrationsStatus("applied")
 
 		value := selectValue("apitest1", "i")
 		Expect(value).Should(Equal(two))
@@ -434,65 +451,24 @@ var _ = Describe("Integration API tests", func() {
 	})
 
 	It("down", func() {
-		// set up
-		err := gomigrator.DoCreate(test_config, "api1")
+		setUpMigrations()
+		// down test
+		err = gomigrator.DoDown(testConfig)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = gomigrator.DoCreate(test_config, "api2")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = gomigrator.DoCreate(test_config, "mig1")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = gomigrator.DoUp(test_config)
-		Expect(err).NotTo(HaveOccurred())
+		checkMigrationsStatus("new")
 
 		tables := getTables()
-		Expect(tables).To(ContainElement("apitest1"))
-		Expect(tables).To(ContainElement("apitest2"))
-		Expect(tables).To(ContainElement("test1"))
-
-		// down test
-		err = gomigrator.DoDown(test_config)
-		Expect(err).NotTo(HaveOccurred())
-
-		// Check that mig1 and mig2 are in migrator table and status is new
-		hasMigrations := getMigrationRecords()
-		Expect(len(hasMigrations)).Should(Equal(3))
-		Expect(hasMigrations[0].Mname).Should(Equal("api1"))
-		Expect(hasMigrations[0].Mstatus).Should(Equal("new"))
-		Expect(hasMigrations[1].Mname).Should(Equal("api2"))
-		Expect(hasMigrations[1].Mstatus).Should(Equal("new"))
-		Expect(hasMigrations[2].Mname).Should(Equal("mig1"))
-		Expect(hasMigrations[2].Mstatus).Should(Equal("new"))
-
-		tables = getTables()
 		Expect(tables).NotTo(ContainElement("apitest1"))
 		Expect(tables).NotTo(ContainElement("apitest2"))
 		Expect(tables).NotTo(ContainElement("test1"))
-
 	})
+
 	It("redo", func() {
-		// set up
-		err := gomigrator.DoCreate(test_config, "api1")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = gomigrator.DoCreate(test_config, "api2")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = gomigrator.DoCreate(test_config, "mig1")
-		Expect(err).NotTo(HaveOccurred())
-
-		err = gomigrator.DoUp(test_config)
-		Expect(err).NotTo(HaveOccurred())
-
-		tables := getTables()
-		Expect(tables).To(ContainElement("apitest1"))
-		Expect(tables).To(ContainElement("apitest2"))
-		Expect(tables).To(ContainElement("test1"))
+		setUpMigrations()
 
 		// redo test
-		err = gomigrator.DoRedo(test_config)
+		err = gomigrator.DoRedo(testConfig)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Check that mig1 and mig2 are in migrator table and status is new
@@ -505,10 +481,9 @@ var _ = Describe("Integration API tests", func() {
 		Expect(hasMigrations[2].Mname).Should(Equal("mig1"))
 		Expect(hasMigrations[2].Mstatus).Should(Equal("applied"))
 
-		tables = getTables()
+		tables := getTables()
 		Expect(tables).To(ContainElement("apitest1"))
 		Expect(tables).To(ContainElement("apitest2"))
 		Expect(tables).To(ContainElement("test1"))
-
 	})
 })

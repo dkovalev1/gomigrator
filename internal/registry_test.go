@@ -5,30 +5,35 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require" //nolint
 )
 
-func test_up(tx *sql.Tx) error {
+func testUp(_ *sql.Tx) error {
 	return errors.New("42")
 }
 
-func test_down(tc *sql.Tx) error {
+func testDown(_ *sql.Tx) error {
 	return errors.New("43")
 }
 
-func TestRegistry(t *testing.T) {
+func cleanupRegistry() {
+	r := Registry.(*RegistryImpl)
+	clear(r.records)
+}
 
+func TestRegistry(t *testing.T) {
 	t.Run("Registry basic", func(t *testing.T) {
+		cleanupRegistry()
 		require.NotNil(t, Registry)
 
-		Registry.Register("mig2go", test_up, test_down)
+		Registry.Register("mig2go", testUp, testDown)
 
 		r := Registry.(*RegistryImpl)
 
 		require.NotNil(t, r)
-		require.Equal(t, len(r.records), 1)
+		require.Equal(t, 1, len(r.records))
 
-		Registry.Register("mig2go2", test_up, test_down)
+		Registry.Register("mig2go2", testUp, testDown)
 		require.Equal(t, len(r.records), 2)
 
 		require.True(t, Registry.Check("mig2go2"))

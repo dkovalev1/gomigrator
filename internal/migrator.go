@@ -10,7 +10,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/dkovalev1/gomigrator/config"
+	"github.com/dkovalev1/gomigrator/config" //nolint
 )
 
 type MigrationDirection int
@@ -42,8 +42,10 @@ func NewMigrator(cfg config.Config, dir MigrationDirection) *Migrator {
 		Config:    cfg,
 		Direction: dir,
 	}
-	db := NewDatabase(cfg.DSN)
-	ret.Database = db
+	if cfg.DSN != "skip" {
+		db := NewDatabase(cfg.DSN)
+		ret.Database = db
+	}
 	return ret
 }
 
@@ -54,7 +56,6 @@ func (m *Migrator) Close() {
 }
 
 func (m *Migrator) Migrate() error {
-
 	statusFilter := MigrationNew
 	if m.Direction == MigrationDown {
 		statusFilter = MigrationApplied
@@ -68,7 +69,6 @@ func (m *Migrator) Migrate() error {
 	log.Printf("Found %d migrations.", len(migrations))
 	for _, mg := range migrations {
 		err = m.ApplyMigration(&mg)
-
 		if err != nil {
 			return err
 		}
@@ -99,23 +99,23 @@ func (m *Migrator) ReadMigrationStatements(reader io.Reader) ([]string, error) {
 	var currentDirection MigrationDirection = MigrationUp
 
 	for scanner.Scan() {
-
 		line := scanner.Text()
-		if strings.HasPrefix(line, "--gomigrator up") {
+		switch {
+		case strings.HasPrefix(line, "--gomigrator up"):
 			if stmtStarted && currentDirection == m.Direction {
 				statements = append(statements, statement)
 			}
 			statement = ""
 			stmtStarted = true
 			currentDirection = MigrationUp
-		} else if strings.HasPrefix(line, "--gomigrator down") {
+		case strings.HasPrefix(line, "--gomigrator down"):
 			if stmtStarted && currentDirection == m.Direction {
 				statements = append(statements, statement)
 			}
 			statement = ""
 			stmtStarted = true
 			currentDirection = MigrationDown
-		} else if line != "" {
+		case line != "":
 			statement += line
 		}
 	}
@@ -130,16 +130,16 @@ func (m *Migrator) ApplyMigration(mg *MigrationRec) error {
 	log.Printf("Apply migration %s to %s\n", mg.Name, m.Direction.String())
 	tx := m.Database.StartTransaction()
 
-	var status_err error = nil
-	var err error = nil
+	var statusErr error
+	var err error
 	defer func() {
 		// Migration can be failed bus status shall be updated.
 		// We do it in the same transaction, commit shall be succeeded.
 		tx.Rollback()
 
-		if status_err != nil || err != nil {
+		if statusErr != nil || err != nil {
 			// Update status in the different transaction
-			status_err = m.Database.SetMigrationStatus(mg.Id, MigrationError)
+			statusErr = m.Database.SetMigrationStatus(mg.ID, MigrationError)
 		}
 	}()
 
@@ -147,7 +147,7 @@ func (m *Migrator) ApplyMigration(mg *MigrationRec) error {
 
 	switch mg.Type {
 	case config.MigrationSQL:
-		err = m.applySqlMigration(tx, mg)
+		err = m.applySQLMigration(tx, mg)
 	case config.MigrationGo:
 		migration := Registry.Get(mg.Name)
 		err = m.applyGoMigration(tx, migration)
@@ -166,7 +166,7 @@ func (m *Migrator) ApplyMigration(mg *MigrationRec) error {
 	}
 
 	if err == nil {
-		status_err = m.Database.SetMigrationStatus(mg.Id, status)
+		statusErr = m.Database.SetMigrationStatus(mg.ID, status)
 		err = tx.Commit()
 	} else {
 		log.Printf("Error %s in migration %s: %v", m.Direction.String(), mg.Name, err)
@@ -190,8 +190,7 @@ func (m *Migrator) applyGoMigration(tx *sql.Tx, migration *Migration) error {
 	return err
 }
 
-func (m *Migrator) applySqlMigration(tx *sql.Tx, mg *MigrationRec) error {
-
+func (m *Migrator) applySQLMigration(tx *sql.Tx, mg *MigrationRec) error {
 	checkPath := path.Join(m.Config.MigrationPath, mg.Name+".sql")
 
 	_, err := os.Stat(checkPath)
@@ -206,7 +205,6 @@ func (m *Migrator) applySqlMigration(tx *sql.Tx, mg *MigrationRec) error {
 	defer file.Close()
 
 	statements, err := m.ReadMigrationStatements(file)
-
 	if err != nil {
 		return nil
 	}

@@ -7,8 +7,8 @@ import (
 	"os"
 	"path"
 
-	config "github.com/dkovalev1/gomigrator/config"
-	"github.com/dkovalev1/gomigrator/internal"
+	config "github.com/dkovalev1/gomigrator/config" //nolint
+	"github.com/dkovalev1/gomigrator/internal"      //nolint
 )
 
 func DoCreate(configuration config.Config, args ...string) error {

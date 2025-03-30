@@ -53,7 +53,6 @@ var DefaultConfig = Config{
 }
 
 func NewConfig(configFile string) Config {
-
 	config := DefaultConfig
 
 	if _, err := toml.DecodeFile(configFile, &config); err != nil {

@@ -7,10 +7,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/dkovalev1/gomigrator/config"
-	_ "github.com/jackc/pgx/v5/stdlib" //nolint
-	"github.com/jmoiron/sqlx"          //nolint
-	_ "github.com/lib/pq"
+	"github.com/dkovalev1/gomigrator/config" //nolint
+	_ "github.com/jackc/pgx/v5/stdlib"       //nolint
+	"github.com/jmoiron/sqlx"                //nolint
+	_ "github.com/lib/pq"                    //nolint
 )
 
 //go:embed create*.sql
@@ -47,8 +47,8 @@ func (s *MigrationStatus) Set(value string) error {
 	return nil
 }
 
-func (status MigrationStatus) String() string {
-	switch status {
+func (s *MigrationStatus) String() string {
+	switch *s {
 	case MigrationNew:
 		return "new"
 	case MigrationInProc:
@@ -63,7 +63,7 @@ func (status MigrationStatus) String() string {
 }
 
 type MigrationRec struct {
-	Id      int
+	ID      int
 	Name    string
 	Type    config.MigrationType
 	Status  MigrationStatus
@@ -81,7 +81,6 @@ func NewDatabase(dsn string) *Database {
 }
 
 func (d *Database) init(dsn string) error {
-
 	db, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
 		return err
@@ -111,7 +110,6 @@ SELECT EXISTS (
    			WHERE  table_schema = 'gomigrator'
    			AND    table_name   = 'migrations')
 	`)
-
 	if err != nil {
 		return false, err
 	}
@@ -120,10 +118,9 @@ SELECT EXISTS (
 }
 
 /*
-Create internal tables for migrator. Use temporary migrator instance for the tables,
+Create internal tables for migrator. Use temporary migrator instance for the tables.
 */
 func (d *Database) createTables() error {
-
 	file, err := createTables.Open("create.sql")
 	if err != nil {
 		return err
@@ -164,7 +161,13 @@ type VersionInfo struct {
 }
 
 func (d *Database) GetVersion() (version VersionInfo, err error) {
-	query := "SELECT mid AS Version, mname AS MigrationName FROM gomigrator.migrations WHERE mstatus='applied' ORDER BY mlastrun DESC LIMIT 1"
+	query := `
+SELECT mid AS Version, mname AS MigrationName 
+FROM gomigrator.migrations 
+WHERE mstatus='applied' 
+ORDER BY mlastrun 
+DESC LIMIT 1`
+
 	if err = d.conn.Get(&version, query); err != nil {
 		return VersionInfo{}, err
 	}
@@ -207,6 +210,7 @@ func (d *Database) GetMigrations(args ...any) ([]MigrationRec, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var rec dbrec
 		err = rows.Scan(&rec.mid, &rec.mname, &rec.mtype, &rec.mstatus, &rec.mlastrun)
@@ -214,7 +218,7 @@ func (d *Database) GetMigrations(args ...any) ([]MigrationRec, error) {
 			return nil, err
 		}
 		mrec := MigrationRec{
-			Id:   rec.mid,
+			ID:   rec.mid,
 			Name: rec.mname,
 		}
 		if rec.mlastrun.Valid {
@@ -246,10 +250,10 @@ ORDER BY name
 	if err != nil {
 		return nil, err
 	}
-	var ret []MigrationRec
+	ret := make([]MigrationRec, 0, len(records))
 	for _, rec := range records {
 		mrec := MigrationRec{
-			Id:   rec.mid,
+			ID:   rec.mid,
 			Name: rec.mname,
 		}
 		if rec.mlastrun.Valid {
@@ -269,15 +273,15 @@ func (d *Database) SetMigrationStatus(mid int, status MigrationStatus) error {
 	return err
 }
 
-func (db *Database) StartTransaction() (tx *sql.Tx) {
-	tx, err := db.conn.Begin()
+func (d *Database) StartTransaction() (tx *sql.Tx) {
+	tx, err := d.conn.Begin()
 	if err != nil {
 		return nil
 	}
 	return
 }
 
-func (db *Database) Execute(stmt string) error {
-	_, err := db.conn.Exec(stmt)
+func (d *Database) Execute(stmt string) error {
+	_, err := d.conn.Exec(stmt)
 	return err
 }
