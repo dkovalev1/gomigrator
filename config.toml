@@ -1,2 +1,4 @@
-# Are comments allowed?
-DSN="postgres://pgx_md5:secret@localhost:5432/pgx_test?sslmode=disable"
+# Gomigrator configuration file
+
+DSN="host=localhost user=test password=test dbname=migratordb sslmode=disable"
+MigrationPath="samples/sql"

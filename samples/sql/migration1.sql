@@ -1,7 +1,7 @@
--- gomigratorUp 1
+--gomigrator up
 
-create table t(int i primary key, int j);
+create table t(i int primary key, j int);
 
--- gomigratorDown 1
+--gomigrator down
 
 drop table t;
