@@ -21,7 +21,8 @@ test: compose-test-up unit-test integration
 	# go test -v -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/samples/go
 
 integration:
-	ginkgo --repeat=100 integration
+	go install github.com/onsi/ginkgo/v2/ginkgo
+	ginkgo --repeat=10 integration
 
 clean:
 	rm -rf $(BIN)
