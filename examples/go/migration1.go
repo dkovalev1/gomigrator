@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"errors"
 
-	gom "github.com/dkovalev1/gomigrator"
+	gomigrator "github.com/dkovalev1/gomigrator/pkg"
 )
 
 func init() {
-	gom.Register("mig2go", up, down)
+	gomigrator.Register("mig2go", up, down)
 }
 
 func up(tx *sql.Tx) error {

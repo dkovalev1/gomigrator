@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 
-	gom "github.com/dkovalev1/gomigrator"
 	"github.com/dkovalev1/gomigrator/config"
+	gomigrator "github.com/dkovalev1/gomigrator/pkg"
 )
 
 func Migrate() {
 	config := config.Config{}
-	if err := gom.DoUp(config, nil); err != nil {
+	if err := gomigrator.DoUp(config); err != nil {
 		panic(err)
 	}
 }

@@ -15,10 +15,10 @@ lint: install-lint-deps
 	golangci-lint run ./...
 
 unit-test:
-	go test -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/samples/go
+	go test -race -count 100 github.com/dkovalev1/gomigrator/cmd/gomigrator github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg
 
 test: compose-test-up unit-test integration
-	# go test -v -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/samples/go
+	# go test -v -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg
 
 integration:
 	go install github.com/onsi/ginkgo/v2/ginkgo
