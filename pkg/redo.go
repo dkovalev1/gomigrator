@@ -20,13 +20,7 @@ func DoRedo(config config.Config, _ ...string) error {
 		return err
 	}
 
-	upMigrator := internal.NewMigrator(config, internal.MigrationUp)
-	defer upMigrator.Close()
-
-	err = upMigrator.Migrate()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	redoMigrator.Direction = internal.MigrationUp
+	err = redoMigrator.Migrate()
+	return err
 }

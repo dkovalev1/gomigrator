@@ -75,8 +75,15 @@ func NewDatabase(dsn string) *Database {
 	db := &Database{}
 	if err := db.init(dsn); err != nil {
 		// Nothing to do in the database utility, nothing what we can recover, so just panic here
-		panic(err)
+		log.Fatal(err)
 	}
+	// Acquire lock. The lock lasts till end of the session, no additional actions required
+	qlock := "SELECT pg_advisory_lock(('x' || md5('gomigrator_session'))::bit(64)::bigint)"
+	_, err := db.conn.Exec(qlock)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return db
 }
 
