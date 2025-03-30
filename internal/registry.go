@@ -4,8 +4,10 @@ import (
 	"database/sql"
 )
 
-type UpMigration func(sql.Tx) error
-type DownMigration func(sql.Tx) error
+type (
+	UpMigration   func(sql.Tx) error
+	DownMigration func(sql.Tx) error
+)
 
 type IRegistry interface {
 	Register(name string, up func(Tx *sql.Tx) error, down func(Tx *sql.Tx) error) error
