@@ -20,6 +20,14 @@ type Database struct {
 	conn *sqlx.DB
 }
 
+type OrderBy int
+
+const (
+	OrderByNone OrderBy = iota
+	OrderByAsc
+	OrderByDesc
+)
+
 type MigrationStatus int
 
 const (
@@ -201,17 +209,23 @@ func (d *Database) GetMigrations(args ...any) ([]MigrationRec, error) {
 	var ret []MigrationRec
 	parameters := make([]any, 0)
 
+	var order string
+
 	for _, arg := range args {
 		switch v := arg.(type) {
 		case MigrationStatus:
 			sql += " WHERE mstatus = $1"
 			parameters = append(parameters, v.String())
+		case OrderBy:
+			if v == OrderByDesc {
+				order = " DESC"
+			}
 		default:
 			return nil, fmt.Errorf("invalid argument to GetMigrations")
 		}
 	}
 
-	sql += " ORDER BY mid"
+	sql += " ORDER BY mid" + order
 
 	rows, err := d.conn.Query(sql, parameters...)
 	if err != nil {
