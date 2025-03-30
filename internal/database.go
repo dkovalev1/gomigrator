@@ -20,6 +20,14 @@ type Database struct {
 	conn *sqlx.DB
 }
 
+type OrderBy int
+
+const (
+	OrderByNone OrderBy = iota
+	OrderByAsc
+	OrderByDesc
+)
+
 type MigrationStatus int
 
 const (
@@ -75,8 +83,15 @@ func NewDatabase(dsn string) *Database {
 	db := &Database{}
 	if err := db.init(dsn); err != nil {
 		// Nothing to do in the database utility, nothing what we can recover, so just panic here
-		panic(err)
+		log.Fatal(err)
 	}
+	// Acquire lock. The lock lasts till end of the session, no additional actions required
+	qlock := "SELECT pg_advisory_lock(('x' || md5('gomigrator_session'))::bit(64)::bigint)"
+	_, err := db.conn.Exec(qlock)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return db
 }
 
@@ -194,17 +209,23 @@ func (d *Database) GetMigrations(args ...any) ([]MigrationRec, error) {
 	var ret []MigrationRec
 	parameters := make([]any, 0)
 
+	var order string
+
 	for _, arg := range args {
 		switch v := arg.(type) {
 		case MigrationStatus:
 			sql += " WHERE mstatus = $1"
 			parameters = append(parameters, v.String())
+		case OrderBy:
+			if v == OrderByDesc {
+				order = " DESC"
+			}
 		default:
 			return nil, fmt.Errorf("invalid argument to GetMigrations")
 		}
 	}
 
-	sql += " ORDER BY mid"
+	sql += " ORDER BY mid" + order
 
 	rows, err := d.conn.Query(sql, parameters...)
 	if err != nil {

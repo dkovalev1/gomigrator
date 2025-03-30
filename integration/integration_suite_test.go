@@ -95,15 +95,15 @@ func setUpMigrations() {
 	Expect(tables).To(ContainElement("test1"))
 }
 
-func checkMigrationsStatus(status string) {
+func checkMigrationsStatus(status []string) {
 	hasMigrations := getMigrationRecords()
 	Expect(len(hasMigrations)).Should(Equal(3))
 	Expect(hasMigrations[0].Mname).Should(Equal("api1"))
-	Expect(hasMigrations[0].Mstatus).Should(Equal(status))
+	Expect(hasMigrations[0].Mstatus).Should(Equal(status[0]))
 	Expect(hasMigrations[1].Mname).Should(Equal("api2"))
-	Expect(hasMigrations[1].Mstatus).Should(Equal(status))
+	Expect(hasMigrations[1].Mstatus).Should(Equal(status[1]))
 	Expect(hasMigrations[2].Mname).Should(Equal("mig1"))
-	Expect(hasMigrations[2].Mstatus).Should(Equal(status))
+	Expect(hasMigrations[2].Mstatus).Should(Equal(status[2]))
 }
 
 func getMigrationRecords() []MigrationRec {
@@ -254,14 +254,14 @@ var _ = Describe("Integration tests for utility", func() {
 		out := checkOutput("down")
 
 		Expect(out).Should(ContainSubstring("Found 2 migrations."))
-		Expect(out).Should(ContainSubstring("Apply migration mig1 to DOWN"))
+		Expect(out).ShouldNot(ContainSubstring("Apply migration mig1 to DOWN"))
 		Expect(out).Should(ContainSubstring("Apply migration mig2 to DOWN"))
 
 		// Check that mig1 and mig2 are in migrator table and status is new
 		hasMigrations = getMigrationRecords()
 		Expect(len(hasMigrations)).Should(Equal(2))
 		Expect(hasMigrations[0].Mname).Should(Equal("mig1"))
-		Expect(hasMigrations[0].Mstatus).Should(Equal("new"))
+		Expect(hasMigrations[0].Mstatus).Should(Equal("applied"))
 		Expect(hasMigrations[1].Mname).Should(Equal("mig2"))
 		Expect(hasMigrations[1].Mstatus).Should(Equal("new"))
 	})
@@ -274,10 +274,10 @@ var _ = Describe("Integration tests for utility", func() {
 		out := checkOutput("redo")
 		Expect(out).Should(ContainSubstring("Found 2 migrations."))
 
-		Expect(out).Should(ContainSubstring("Apply migration mig1 to DOWN"))
+		Expect(out).ShouldNot(ContainSubstring("Apply migration mig1 to DOWN"))
 		Expect(out).Should(ContainSubstring("Apply migration mig2 to DOWN"))
 
-		Expect(out).Should(ContainSubstring("Apply migration mig1 to UP"))
+		Expect(out).ShouldNot(ContainSubstring("Apply migration mig1 to UP"))
 		Expect(out).Should(ContainSubstring("Apply migration mig2 to UP"))
 
 		// Check that mig1 is in migrator table and status is applied
@@ -438,7 +438,7 @@ var _ = Describe("Integration API tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// Check that mig1 is in migrator table and status is applied
-		checkMigrationsStatus("applied")
+		checkMigrationsStatus([]string{"applied", "applied", "applied"})
 
 		value := selectValue("apitest1", "i")
 		Expect(value).Should(Equal(two))
@@ -456,11 +456,11 @@ var _ = Describe("Integration API tests", func() {
 		err = gomigrator.DoDown(testConfig)
 		Expect(err).NotTo(HaveOccurred())
 
-		checkMigrationsStatus("new")
+		checkMigrationsStatus([]string{"applied", "applied", "new"})
 
 		tables := getTables()
-		Expect(tables).NotTo(ContainElement("apitest1"))
-		Expect(tables).NotTo(ContainElement("apitest2"))
+		Expect(tables).To(ContainElement("apitest1"))
+		Expect(tables).To(ContainElement("apitest2"))
 		Expect(tables).NotTo(ContainElement("test1"))
 	})
 

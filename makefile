@@ -5,7 +5,7 @@ compose-test-up:
 	docker compose -f deployments/docker-compose.yaml up -d
 
 build:
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/
+	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/gomigrator
 
 install-lint-deps:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -15,10 +15,10 @@ lint: install-lint-deps
 	golangci-lint run ./...
 
 unit-test:
-	go test -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/samples/go
+	go test -race -count 100 github.com/dkovalev1/gomigrator/cmd/gomigrator github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg
 
 test: compose-test-up unit-test integration
-	# go test -v -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/samples/go
+	# go test -v -race -count 100 github.com/dkovalev1/gomigrator/cmd/gomigrator github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/examples/go
 
 integration:
 	go install github.com/onsi/ginkgo/v2/ginkgo

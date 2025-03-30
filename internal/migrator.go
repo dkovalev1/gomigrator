@@ -57,11 +57,13 @@ func (m *Migrator) Close() {
 
 func (m *Migrator) Migrate() error {
 	statusFilter := MigrationNew
+	order := OrderByAsc
 	if m.Direction == MigrationDown {
 		statusFilter = MigrationApplied
+		order = OrderByDesc
 	}
 
-	migrations, err := m.Database.GetMigrations(statusFilter)
+	migrations, err := m.Database.GetMigrations(statusFilter, order)
 	if err != nil {
 		return err
 	}
@@ -71,6 +73,10 @@ func (m *Migrator) Migrate() error {
 		err = m.ApplyMigration(&mg)
 		if err != nil {
 			return err
+		}
+		if m.Direction == MigrationDown {
+			// Proceed only one migration for down (and redo)
+			break
 		}
 	}
 	return nil
