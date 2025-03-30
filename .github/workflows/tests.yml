@@ -51,7 +51,6 @@ jobs:
 
   tests_by_makefile:
     runs-on: ubuntu-latest
-    if: contains(github.ref, 'calendar')
     steps:
       - name: Set up Go
         uses: actions/setup-go@v3
