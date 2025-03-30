@@ -3,7 +3,7 @@ package gomigrator
 import (
 	"database/sql"
 
-	"github.com/dkovalev1/gomigrator/internal"
+	"github.com/dkovalev1/gomigrator/internal" //nolint
 )
 
 func Register(name string, up func(Tx *sql.Tx) error, down func(Tx *sql.Tx) error) error {

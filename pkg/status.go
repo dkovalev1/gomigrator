@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dkovalev1/gomigrator/config"
-	"github.com/dkovalev1/gomigrator/internal"
+	"github.com/dkovalev1/gomigrator/config"   //nolint
+	"github.com/dkovalev1/gomigrator/internal" //nolint
 )
 
 type MigrationStatusRec struct {
-	Id      int
+	ID      int
 	Name    string
 	Type    string
 	Status  string
@@ -28,7 +28,7 @@ func Status(config config.Config) (status []MigrationStatusRec, err error) {
 
 	for _, m := range migrations {
 		rec := MigrationStatusRec{
-			Id:      m.Id,
+			ID:      m.ID,
 			Name:    m.Name,
 			Type:    m.Type.String(),
 			Status:  m.Status.String(),
@@ -41,8 +41,10 @@ func Status(config config.Config) (status []MigrationStatusRec, err error) {
 	return
 }
 
-func DoStatus(config config.Config, args ...string) error {
-	fmt.Printf("status, dsn=%s, migrationPath=%s, migrationType=%s\n", config.DSN, config.MigrationPath, config.MigrationType.String())
+func DoStatus(config config.Config, _ ...string) error {
+	fmt.Printf(
+		"status, dsn=%s, migrationPath=%s, migrationType=%s\n",
+		config.DSN, config.MigrationPath, config.MigrationType.String())
 
 	migrations, err := Status(config)
 	if err != nil {
@@ -61,7 +63,7 @@ func DoStatus(config config.Config, args ...string) error {
 		} else {
 			applied = "NEVER"
 		}
-		fmt.Printf("%6d|%10s|%6s|%10s|%15s\n", m.Id, m.Name, m.Type, m.Status, applied)
+		fmt.Printf("%6d|%10s|%6s|%10s|%15s\n", m.ID, m.Name, m.Type, m.Status, applied)
 	}
 	return nil
 }

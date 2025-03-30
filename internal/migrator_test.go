@@ -4,12 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dkovalev1/gomigrator/config"
-	"github.com/stretchr/testify/require"
+	"github.com/dkovalev1/gomigrator/config" //nolint
+	"github.com/stretchr/testify/require"    //nolint
 )
 
 func TestReadMigrationStatements(t *testing.T) {
 	migrator := NewMigrator(config.DefaultConfig, MigrationUp)
+	defer migrator.Close()
 
 	t.Run("empty file", func(t *testing.T) {
 		ms, err := migrator.ReadMigrationStatements(nil)
@@ -24,7 +25,7 @@ func TestReadMigrationStatements(t *testing.T) {
 	})
 
 	t.Run("Simple file", func(t *testing.T) {
-		test_desc := `
+		testDesc := `
 --gomigrator up
 CREATE SCHEMA IF NOT EXISTS gomigrator;
 
@@ -41,15 +42,17 @@ in
 few
 lines
 `
-		reader := strings.NewReader(test_desc)
+		reader := strings.NewReader(testDesc)
 
 		ms, err := migrator.ReadMigrationStatements(reader)
 		require.NoError(t, err)
 		require.NotNil(t, ms)
 		require.Equal(t, len(ms), 3)
 
-		reader = strings.NewReader(test_desc)
+		reader = strings.NewReader(testDesc)
 		downMigrator := NewMigrator(config.DefaultConfig, MigrationDown)
+		defer downMigrator.Close()
+
 		ms, err = downMigrator.ReadMigrationStatements(reader)
 		require.NoError(t, err)
 		require.NotNil(t, ms)
