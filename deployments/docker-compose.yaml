@@ -12,7 +12,7 @@ services:
       PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
       - .:/docker-entrypoint-initdb.d
-      - testdb-data:/var/lib/postgresql/data
+      # - testdb-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
     healthcheck:
@@ -27,5 +27,10 @@ services:
         limits:
           cpus: '1'
           memory: 4G      
-volumes:
-  testdb-data:
+
+# This docker compose is used for testing, so it's more convienient not to have persistence
+#  between docker compose runs. 
+# If persistence is needed, uncomment the following:
+# 
+# volumes:
+#   testdb-data:

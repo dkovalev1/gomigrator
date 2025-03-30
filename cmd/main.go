@@ -6,16 +6,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dkovalev1/gomigrator"
 	"github.com/dkovalev1/gomigrator/config"
+	gomigrator "github.com/dkovalev1/gomigrator/pkg"
 )
-
-func init() {
-}
 
 type commandDefinition struct {
 	name string
-	fn   func(config config.Config, args []string) error
+	fn   func(config config.Config, args ...string) error
 	help string
 }
 
@@ -41,12 +38,12 @@ func usage(err error) {
 
 func runCommand(command string, config config.Config, args []string) error {
 
-	fmt.Printf("Performing migration command %s, DSN=%s, migrationPath=%s, migrationType=%s\n",
-		command, config.DSN, config.MigrationPath, config.MigrationType.String())
+	fmt.Printf("Performing migration command %s, migrationPath=%s, migrationType=%s\n",
+		command, config.MigrationPath, config.MigrationType.String())
 
 	for _, cmd := range commands {
 		if cmd.name == command {
-			return cmd.fn(config, args)
+			return cmd.fn(config, args...)
 		}
 	}
 	err := fmt.Errorf("%v %s", errCommandNotFound, command)

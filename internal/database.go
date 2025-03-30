@@ -158,11 +158,15 @@ func (d *Database) createTables() error {
 	return tx.Commit()
 }
 
-func (d *Database) GetVersion() (string, error) {
-	var version string
-	query := "SELECT mid FROM gomigrator.migrations WHERE mstatus='applied' ORDER BY mlastrun DESC LIMIT 1"
-	if err := d.conn.Get(&version, query); err != nil {
-		return "", err
+type VersionInfo struct {
+	Version       int
+	MigrationName string
+}
+
+func (d *Database) GetVersion() (version VersionInfo, err error) {
+	query := "SELECT mid AS Version, mname AS MigrationName FROM gomigrator.migrations WHERE mstatus='applied' ORDER BY mlastrun DESC LIMIT 1"
+	if err = d.conn.Get(&version, query); err != nil {
+		return VersionInfo{}, err
 	}
 	return version, nil
 }

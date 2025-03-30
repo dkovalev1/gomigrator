@@ -7,11 +7,13 @@ import (
 	"github.com/dkovalev1/gomigrator/internal"
 )
 
-func DoRedo(config config.Config, args []string) error {
+func DoRedo(config config.Config, args ...string) error {
 	fmt.Printf("redo, dsn=%s, migrationPath=%s, migrationType=%s\n", config.DSN, config.MigrationPath, config.MigrationType.String())
 
-	downMigrator := internal.NewMigrator(config, internal.MigrationDown)
-	err := downMigrator.Migrate()
+	redoMigrator := internal.NewMigrator(config, internal.MigrationDown)
+	defer redoMigrator.Close()
+
+	err := redoMigrator.Migrate()
 	if err != nil {
 		return err
 	}

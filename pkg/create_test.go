@@ -12,7 +12,7 @@ func TestRegistry(t *testing.T) {
 	test_config := config.Config{}
 
 	t.Run("Create", func(t *testing.T) {
-		err := DoCreate(test_config, make([]string, 0))
+		err := DoCreate(test_config)
 		require.Error(t, err)
 	})
 }

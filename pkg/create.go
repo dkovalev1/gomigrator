@@ -3,6 +3,7 @@ package gomigrator
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path"
 
@@ -10,14 +11,15 @@ import (
 	"github.com/dkovalev1/gomigrator/internal"
 )
 
-func DoCreate(configuration config.Config, args []string) error {
-	fmt.Printf("create, dsn=%s, migrationPath=%s, migrationType=%s\n", configuration.DSN, configuration.MigrationPath, configuration.MigrationType.String())
+func DoCreate(configuration config.Config, args ...string) error {
+	log.Printf("create, migrationType=%s\n", configuration.MigrationType.String())
 
 	if len(args) == 0 {
 		return fmt.Errorf("argument <Migration Name> required for create")
 	}
 
 	db := internal.NewDatabase(configuration.DSN)
+	defer db.Close()
 
 	migrationName := args[0]
 

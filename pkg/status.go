@@ -2,16 +2,49 @@ package gomigrator
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dkovalev1/gomigrator/config"
 	"github.com/dkovalev1/gomigrator/internal"
 )
 
-func DoStatus(config config.Config, args []string) error {
+type MigrationStatusRec struct {
+	Id      int
+	Name    string
+	Type    string
+	Status  string
+	LastRun time.Time
+	Applied bool
+}
+
+func Status(config config.Config) (status []MigrationStatusRec, err error) {
+	database := internal.NewDatabase(config.DSN)
+	defer database.Close()
+
+	migrations, err := database.GetMigrations()
+	if err != nil {
+		return
+	}
+
+	for _, m := range migrations {
+		rec := MigrationStatusRec{
+			Id:      m.Id,
+			Name:    m.Name,
+			Type:    m.Type.String(),
+			Status:  m.Status.String(),
+			LastRun: m.LastRun,
+			Applied: m.Applied,
+		}
+		status = append(status, rec)
+	}
+
+	return
+}
+
+func DoStatus(config config.Config, args ...string) error {
 	fmt.Printf("status, dsn=%s, migrationPath=%s, migrationType=%s\n", config.DSN, config.MigrationPath, config.MigrationType.String())
 
-	database := internal.NewDatabase(config.DSN)
-	migrations, err := database.GetMigrations()
+	migrations, err := Status(config)
 	if err != nil {
 		return err
 	}
@@ -28,7 +61,7 @@ func DoStatus(config config.Config, args []string) error {
 		} else {
 			applied = "NEVER"
 		}
-		fmt.Printf("%6d|%10s|%6s|%10s|%15s\n", m.Id, m.Name, m.Type.String(), m.Status.String(), applied)
+		fmt.Printf("%6d|%10s|%6s|%10s|%15s\n", m.Id, m.Name, m.Type, m.Status, applied)
 	}
 	return nil
 }

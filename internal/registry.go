@@ -8,7 +8,7 @@ type UpMigration func(sql.Tx) error
 type DownMigration func(sql.Tx) error
 
 type IRegistry interface {
-	Register(name string, up func(Tx *sql.Tx) error, down func(Tx *sql.Tx) error)
+	Register(name string, up func(Tx *sql.Tx) error, down func(Tx *sql.Tx) error) error
 	Check(name string) bool
 	Get(name string) *Migration
 }
@@ -35,7 +35,7 @@ func NewRegistry() IRegistry {
 	}
 }
 
-func (r *RegistryImpl) Register(name string, up func(Tx *sql.Tx) error, down func(Tx *sql.Tx) error) {
+func (r *RegistryImpl) Register(name string, up func(Tx *sql.Tx) error, down func(Tx *sql.Tx) error) error {
 	m := Migration{
 		Name: name,
 		Up:   up,
@@ -43,6 +43,7 @@ func (r *RegistryImpl) Register(name string, up func(Tx *sql.Tx) error, down fun
 	}
 
 	r.records[name] = m
+	return nil
 }
 
 func (r *RegistryImpl) Check(name string) bool {
