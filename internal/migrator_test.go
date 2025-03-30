@@ -9,7 +9,7 @@ import (
 )
 
 func TestReadMigrationStatements(t *testing.T) {
-	migrator := NewMigrator(config.DefaultConfig, MigrationUp)
+	migrator := NewMigrator(config.Config{DSN: "skip"}, MigrationUp)
 	defer migrator.Close()
 
 	t.Run("empty file", func(t *testing.T) {
@@ -50,7 +50,8 @@ lines
 		require.Equal(t, len(ms), 3)
 
 		reader = strings.NewReader(testDesc)
-		downMigrator := NewMigrator(config.DefaultConfig, MigrationDown)
+
+		downMigrator := NewMigrator(config.Config{DSN: "skip"}, MigrationDown)
 		defer downMigrator.Close()
 
 		ms, err = downMigrator.ReadMigrationStatements(reader)

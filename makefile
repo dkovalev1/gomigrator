@@ -14,8 +14,11 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
-test: compose-test-up integration
+unit-test:
 	go test -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/samples/go
+
+test: compose-test-up unit-test integration
+	# go test -v -race -count 100 github.com/dkovalev1/gomigrator/cmd github.com/dkovalev1/gomigrator/config github.com/dkovalev1/gomigrator/internal github.com/dkovalev1/gomigrator/pkg github.com/dkovalev1/gomigrator/samples/go
 
 integration:
 	ginkgo --repeat=100 integration

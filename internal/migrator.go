@@ -42,8 +42,10 @@ func NewMigrator(cfg config.Config, dir MigrationDirection) *Migrator {
 		Config:    cfg,
 		Direction: dir,
 	}
-	db := NewDatabase(cfg.DSN)
-	ret.Database = db
+	if cfg.DSN != "skip" {
+		db := NewDatabase(cfg.DSN)
+		ret.Database = db
+	}
 	return ret
 }
 
