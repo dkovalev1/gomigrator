@@ -5,7 +5,7 @@ compose-test-up:
 	docker compose -f deployments/docker-compose.yaml up -d
 
 build:
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/
+	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/gomigrator
 
 install-lint-deps:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
